@@ -36,7 +36,7 @@ function pause(){ducking=false;if(state==='running'){state='paused';if(master)ma
 function end(){sound('over');ducking=false;state='over';$('submitForm').hidden=false;$('saveScore').disabled=false;$('saveMessage').textContent='Your score: '+Math.floor(score).toLocaleString();show(score>=1000?'Certified Zoomies Queen!':'Dordor caught you!',Math.floor(score)+' points · '+treats+' treats · '+Math.floor(time)+' seconds of chaos. '+missionDone.filter(Boolean).length+'/3 missions completed. Can you beat that?','Run again');$('notice').textContent='One tiny cat. One very tired human.';stats();}
 function setDuck(held){if(held&&!ducking&&state==='running')sound('duck');ducking=state==='running'&&held;}
 function isCrouched(){return ducking&&jumps===0;}
-function speedNow(){return 350+Math.min(280,Math.floor(time/15)*35)+(boost>0?160:0);}
+function speedNow(){return 350+Math.min(280,Math.floor(time/6)*35)+(boost>0?160:0);}
 const obstacleTypes={
     box:{icon:'📦',w:60,h:60},slipper:{icon:'🥿',w:60,h:35},
     basket:{icon:'🧺',w:66,h:68},teddy:{icon:'🧸',w:58,h:80},
@@ -83,7 +83,7 @@ function drawGigi(){
     ctx.drawImage(sprites,sx,sy,sw,sh,x,bottom-height,width,height);
     ctx.restore();
 }
-function draw(){ctx.clearRect(0,0,W,H);const grad=ctx.createLinearGradient(0,0,0,H);grad.addColorStop(0,'#17132e');grad.addColorStop(1,'#3a2856');ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);ctx.fillStyle='#6c5384';ctx.font='bold 18px system-ui';ctx.fillText('3:00 AM',30,38);ctx.fillStyle='#a991c3';ctx.font='14px system-ui';ctx.fillText('LIVING ROOM · LEVEL '+(1+Math.floor(time/15)),30,62);ctx.globalAlpha=.12;for(let i=0;i<8;i++){const x=((i*160-world*.2)%1280+1280)%1280-100;ctx.fillStyle='#c2a2eb';ctx.fillRect(x,105,2,260);}ctx.globalAlpha=1;ctx.fillStyle='#483359';ctx.fillRect(0,ground,W,H-ground);ctx.fillStyle='#b58bcf';ctx.fillRect(0,ground,W,3);for(let i=0;i<15;i++){ctx.fillStyle='#705279';ctx.fillRect(((i*85-world)%1275+1275)%1275,ground+35,45,3);}for(const o of objects){
+function draw(){ctx.clearRect(0,0,W,H);const grad=ctx.createLinearGradient(0,0,0,H);grad.addColorStop(0,'#17132e');grad.addColorStop(1,'#3a2856');ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);ctx.fillStyle='#6c5384';ctx.font='bold 18px system-ui';ctx.fillText('3:00 AM',30,38);ctx.fillStyle='#a991c3';ctx.font='14px system-ui';ctx.fillText('LIVING ROOM · LEVEL '+(1+Math.floor(time/6)),30,62);ctx.globalAlpha=.12;for(let i=0;i<8;i++){const x=((i*160-world*.2)%1280+1280)%1280-100;ctx.fillStyle='#c2a2eb';ctx.fillRect(x,105,2,260);}ctx.globalAlpha=1;ctx.fillStyle='#483359';ctx.fillRect(0,ground,W,H-ground);ctx.fillStyle='#b58bcf';ctx.fillRect(0,ground,W,3);for(let i=0;i<15;i++){ctx.fillStyle='#705279';ctx.fillRect(((i*85-world)%1275+1275)%1275,ground+35,45,3);}for(const o of objects){
     if(o.kind==='dordor')portrait(human,o.x,o.y,o.w,o.h);
     else if(o.kind==='overhead'){
         ctx.strokeStyle='#a991c3';ctx.lineWidth=2;ctx.beginPath();
