@@ -40,8 +40,34 @@ function speedNow(){return 350+Math.min(280,Math.floor(time/6)*35)+(boost>0?160:
 const obstacleTypes={
     box:{icon:'📦',w:60,h:60},slipper:{icon:'🥿',w:60,h:35},
     basket:{icon:'🧺',w:66,h:68},teddy:{icon:'🧸',w:58,h:80},
-    plant:{icon:'🪴',w:68,h:95},dordor:{w:65,h:112}
+    plant:{icon:'🪴',w:68,h:95},pot:{icon:'🍲',w:64,h:60},bag:{icon:'🛍️',w:62,h:82},pillow:{icon:'🛏️',w:76,h:55},alarm:{icon:'⏰',w:58,h:64},dordor:{w:65,h:112}
 };
+const rooms=[
+    {name:'LIVING ROOM',top:'#17132e',bottom:'#3a2856',floor:'#483359',trim:'#b58bcf',kinds:['box','slipper','basket','teddy','plant','dordor'],hanging:'👕',entry:'The living room is only the beginning.'},
+    {name:'KITCHEN',top:'#102936',bottom:'#255458',floor:'#244548',trim:'#85d6bd',kinds:['pot','bag','box','plant','dordor'],hanging:'🍳',entry:'Kitchen raid! Dodge pots and duck under hanging pans.'},
+    {name:'BEDROOM',top:'#241a3b',bottom:'#574064',floor:'#44314e',trim:'#efa9cd',kinds:['pillow','alarm','slipper','teddy','dordor'],hanging:'👚',entry:'Bedroom invasion! Dodge beds and alarm clocks. Dordor is not amused.'}
+];
+function roomNumber(){return Math.floor(time/30);}
+function currentRoom(){return rooms[roomNumber()%rooms.length];}
+function drawRoomDecor(room){
+    ctx.save();ctx.globalAlpha=.35;
+    if(room===rooms[0]){
+        ctx.fillStyle='#9475ba';ctx.fillRect(335,235,250,95);ctx.fillRect(315,265,290,85);
+        ctx.fillStyle='#d1b9e6';ctx.fillRect(350,250,90,50);ctx.fillRect(470,250,90,50);
+        ctx.fillStyle='#dec287';ctx.fillRect(735,205,8,145);ctx.beginPath();ctx.moveTo(700,205);ctx.lineTo(778,205);ctx.lineTo(757,155);ctx.lineTo(721,155);ctx.closePath();ctx.fill();
+    }else if(room===rooms[1]){
+        ctx.fillStyle='#8bc5b8';ctx.fillRect(320,145,265,65);ctx.fillRect(315,265,285,95);
+        ctx.fillStyle='#d3edcf';ctx.fillRect(307,253,301,12);
+        ctx.fillStyle='#274b50';for(let i=0;i<3;i++){ctx.fillRect(330+i*88,155,70,44);ctx.fillRect(328+i*88,280,75,65);}
+        ctx.fillStyle='#91b6ca';ctx.fillRect(730,135,110,225);ctx.fillStyle='#31565f';ctx.fillRect(738,225,94,4);ctx.fillRect(743,160,5,35);ctx.fillRect(743,250,5,40);
+    }else{
+        ctx.fillStyle='#b48dad';ctx.fillRect(335,220,260,135);ctx.fillStyle='#e0b8d0';ctx.fillRect(330,275,285,70);
+        ctx.fillStyle='#f4dfe5';ctx.fillRect(350,255,75,35);ctx.fillRect(460,255,75,35);
+        ctx.fillStyle='#ab92c8';ctx.fillRect(745,150,95,135);ctx.fillStyle='#17132e';ctx.fillRect(757,160,70,105);
+        ctx.fillStyle='#f6dfa4';ctx.beginPath();ctx.arc(800,185,15,0,Math.PI*2);ctx.fill();
+    }
+    ctx.restore();
+}
 function addObject(){
     const r=Math.random(),x=W+50;
     if(r<.22){
@@ -49,10 +75,10 @@ function addObject(){
         for(let i=0;i<3;i++)objects.push({kind:'treat',x:x+i*65,y:ground-(high?175:95),w:36,h:36});
     }else if(r<.53){
         // Hanging laundry sits above crouched Gigi but intersects her standing body.
-        objects.push({kind:'overhead',x,y:ground-110,w:118,h:65});
+        objects.push({kind:'overhead',x,y:ground-110,w:118,h:65,icon:currentRoom().hanging});
         objects.push({kind:'treat',x:x+38,y:ground-39,w:30,h:30});
     }else{
-        const kinds=Object.keys(obstacleTypes);
+        const kinds=currentRoom().kinds;
         const kind=kinds[Math.floor(Math.random()*kinds.length)],spec=obstacleTypes[kind];
         objects.push({kind,x,y:ground-spec.h,w:spec.w,h:spec.h});
     }
@@ -62,7 +88,7 @@ function playerBounds(){return isCrouched()?{x:px+10,y:y+45,w:55,h:28}:{x:px+10,
 // Hanging laundry and its lines block the space above the ducking gap.
 function obstacleBounds(o){return o.kind==='overhead'?{x:o.x,y:0,w:o.w,h:o.y+o.h}:o;}
 function hit(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;}
-function update(dt){if(state!=='running')return;courseSound(dt);time+=dt;const speed=speedNow();score+=dt*(boost>0?30:10);world+=speed*dt;immune=Math.max(0,immune-dt);flash=Math.max(0,flash-dt);const hadBoost=boost>0;boost=Math.max(0,boost-dt);if(hadBoost&&boost===0)$('notice').textContent='Zoomies cooled down. Keep collecting treats!';vy+=1700*dt;y+=vy*dt;if(y>=ground-76){y=ground-76;vy=0;jumps=0;}spawn-=dt;if(spawn<=0){addObject();spawn=Math.max(.72,1.35-time*.005)+Math.random()*.38;}const player=playerBounds();for(const o of objects){o.x-=speed*dt;if(!o.used&&hit(player,obstacleBounds(o))){o.used=true;if(o.kind!=='treat')o.failed=true;if(o.kind==='treat'){sound('treat');treats++;score+=50;chaos=Math.min(100,chaos+20);if(chaos===100)$('notice').textContent='Chaos full! Tap Zoomies or press Z.';}else if(boost>0){score+=75;}else if(immune===0){sound('crash');cleanDucks=0;lives--;immune=1.5;flash=.15;$('notice').textContent=lives>0?'Bonk! '+lives+' lives left. Keep jumping!':'Dordor finally gets some sleep.';if(lives<=0){end();break;}}}}if(state==='running'){for(const o of objects){if(o.kind==='overhead'&&!o.counted&&!o.failed&&o.x+o.w<player.x){o.counted=true;if(o.ducked)cleanDucks++;}if(o.kind==='overhead'&&!o.failed&&isCrouched()&&o.x<player.x+player.w&&o.x+o.w>player.x)o.ducked=true;}missionUpdate();}objects=objects.filter(o=>o.x>-100&&!o.used);stats();}
+function update(dt){if(state!=='running')return;courseSound(dt);const previousRoom=roomNumber();time+=dt;if(roomNumber()!==previousRoom){sound('mission');$('notice').textContent=currentRoom().entry;}const speed=speedNow();score+=dt*(boost>0?30:10);world+=speed*dt;immune=Math.max(0,immune-dt);flash=Math.max(0,flash-dt);const hadBoost=boost>0;boost=Math.max(0,boost-dt);if(hadBoost&&boost===0)$('notice').textContent='Zoomies cooled down. Keep collecting treats!';vy+=1700*dt;y+=vy*dt;if(y>=ground-76){y=ground-76;vy=0;jumps=0;}spawn-=dt;if(spawn<=0){addObject();spawn=Math.max(.72,1.35-time*.005)+Math.random()*.38;}const player=playerBounds();for(const o of objects){o.x-=speed*dt;if(!o.used&&hit(player,obstacleBounds(o))){o.used=true;if(o.kind!=='treat')o.failed=true;if(o.kind==='treat'){sound('treat');treats++;score+=50;chaos=Math.min(100,chaos+20);if(chaos===100)$('notice').textContent='Chaos full! Tap Zoomies or press Z.';}else if(boost>0){score+=75;}else if(immune===0){sound('crash');cleanDucks=0;lives--;immune=1.5;flash=.15;$('notice').textContent=lives>0?'Bonk! '+lives+' lives left. Keep jumping!':'Dordor finally gets some sleep.';if(lives<=0){end();break;}}}}if(state==='running'){for(const o of objects){if(o.kind==='overhead'&&!o.counted&&!o.failed&&o.x+o.w<player.x){o.counted=true;if(o.ducked)cleanDucks++;}if(o.kind==='overhead'&&!o.failed&&isCrouched()&&o.x<player.x+player.w&&o.x+o.w>player.x)o.ducked=true;}missionUpdate();}objects=objects.filter(o=>o.x>-100&&!o.used);stats();}
 function portrait(img,x,y,w,h){ctx.save();ctx.beginPath();ctx.roundRect(x,y,w,h,14);ctx.clip();if(img.complete&&img.naturalWidth){if(img===cat)ctx.drawImage(img,320,60,600,730,x,y,w,h);else ctx.drawImage(img,340,0,510,875,x,y,w,h);}else{ctx.fillStyle='#8754c8';ctx.fillRect(x,y,w,h);}ctx.restore();ctx.strokeStyle=img===cat?'#cb9dff':'#cdf47b';ctx.lineWidth=3;ctx.strokeRect(x+1,y+1,w-2,h-2);}
 // Atlas: six running poses, one jump, one landing/caught pose.
 function gigiFrame(){
@@ -85,12 +111,12 @@ function drawGigi(){
     ctx.drawImage(sprites,sx,sy,sw,sh,x,bottom-height,width,height);
     ctx.restore();
 }
-function draw(){ctx.clearRect(0,0,W,H);const grad=ctx.createLinearGradient(0,0,0,H);grad.addColorStop(0,'#17132e');grad.addColorStop(1,'#3a2856');ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);ctx.fillStyle='#6c5384';ctx.font='bold 18px system-ui';ctx.fillText('3:00 AM',30,38);ctx.fillStyle='#a991c3';ctx.font='14px system-ui';ctx.fillText('LIVING ROOM · LEVEL '+(1+Math.floor(time/6)),30,62);ctx.globalAlpha=.12;for(let i=0;i<8;i++){const x=((i*160-world*.2)%1280+1280)%1280-100;ctx.fillStyle='#c2a2eb';ctx.fillRect(x,105,2,260);}ctx.globalAlpha=1;ctx.fillStyle='#483359';ctx.fillRect(0,ground,W,H-ground);ctx.fillStyle='#b58bcf';ctx.fillRect(0,ground,W,3);for(let i=0;i<15;i++){ctx.fillStyle='#705279';ctx.fillRect(((i*85-world)%1275+1275)%1275,ground+35,45,3);}for(const o of objects){
+function draw(){ctx.clearRect(0,0,W,H);const room=currentRoom();const grad=ctx.createLinearGradient(0,0,0,H);grad.addColorStop(0,room.top);grad.addColorStop(1,room.bottom);ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);ctx.fillStyle='#6c5384';ctx.font='bold 18px system-ui';ctx.fillText('3:00 AM',30,38);ctx.fillStyle='#a991c3';ctx.font='14px system-ui';ctx.fillText(room.name+' · LEVEL '+(1+Math.floor(time/6)),30,62);ctx.globalAlpha=.12;for(let i=0;i<8;i++){const x=((i*160-world*.2)%1280+1280)%1280-100;ctx.fillStyle='#c2a2eb';ctx.fillRect(x,105,2,260);}ctx.globalAlpha=1;drawRoomDecor(room);ctx.fillStyle=room.floor;ctx.fillRect(0,ground,W,H-ground);ctx.fillStyle=room.trim;ctx.fillRect(0,ground,W,3);for(let i=0;i<15;i++){ctx.fillStyle='#705279';ctx.fillRect(((i*85-world)%1275+1275)%1275,ground+35,45,3);}for(const o of objects){
     if(o.kind==='dordor')portrait(human,o.x,o.y,o.w,o.h);
     else if(o.kind==='overhead'){
         ctx.strokeStyle='#a991c3';ctx.lineWidth=2;ctx.beginPath();
         ctx.moveTo(o.x+8,145);ctx.lineTo(o.x+8,o.y+4);ctx.moveTo(o.x+o.w-8,145);ctx.lineTo(o.x+o.w-8,o.y+4);ctx.stroke();
-        ctx.font='57px system-ui';ctx.fillText('👕',o.x,o.y+o.h-2);ctx.fillText('👕',o.x+57,o.y+o.h-2);
+        ctx.font='57px system-ui';ctx.fillText(o.icon||'👕',o.x,o.y+o.h-2);ctx.fillText(o.icon||'👕',o.x+57,o.y+o.h-2);
         ctx.fillStyle='#d9fb94';ctx.font='bold 14px system-ui';ctx.fillText('DUCK',o.x+35,o.y-10);
     }else{
         ctx.font=(o.kind==='treat'?32:Math.min(76,o.h+10))+'px system-ui';
