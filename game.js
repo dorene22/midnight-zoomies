@@ -2,6 +2,10 @@
 const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');
 const cat=new Image(),human=new Image();cat.src='gigi.png';human.src='dordor.png';
 const sprites=new Image();let spriteReady=false;sprites.onload=()=>{spriteReady=true;};sprites.onerror=()=>{spriteReady=false;};sprites.src='gigi-sprites.png';
+for(const control of [canvas,...document.querySelectorAll('button')]){
+    control.addEventListener('contextmenu',event=>event.preventDefault());
+    control.addEventListener('selectstart',event=>event.preventDefault());
+}
 const W=960,H=480,ground=390,px=175;
 let state='ready',y=ground-76,vy=0,jumps=0,score=0,treats=0,lives=3,chaos=0,time=0,spawn=1,objects=[],boost=0,immune=0,last=0,world=0,flash=0,ducking=false;
 const $=id=>document.getElementById(id);
